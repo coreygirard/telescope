@@ -7,10 +7,12 @@ import telescope
 tree = {'()': None,
         '[]': {42: {'()':None}},
         '.':  {'bbb1':None,
-               'bbb2':None}
+               'bbb2':{'()':None}}}
 
+tree = {'()':False,
+        '[]':{42:True}}
 
-pprint(tree,width=20)
+#pprint(tree,width=20)
 
 class Flytrap(object):
     def __init__(self):
@@ -24,9 +26,13 @@ class Test(unittest.TestCase):
         flytrap = Flytrap()
         tele = telescope.Telescope(tree,flytrap.f)
 
-        tele.aaa1.bbb1()
+        tele()
+        print(flytrap.val)
+        tele[42]
+        print(flytrap.val)
 
-        self.assertEqual(flytrap.val,['aaa1','bbb1'])
+
+        #self.assertEqual(flytrap.val,['aaa1','bbb1'])
 
 
 def load_tests(loader, tests, ignore):
