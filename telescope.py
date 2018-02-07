@@ -14,9 +14,14 @@ class Telescope(object):
         if k not in self.d['[]'].keys():
             raise AttributeError('[]'+str(k))
 
-        return Telescope(self.d['[]'][k],
-                         self.callback,
-                         self.path+['[]'+str(k)])
+        new_path = self.path+[('[]',k)]
+
+        if self.d['[]'][k] == None:
+            return self.callback(new_path)
+        else:
+            return Telescope(self.d['[]'][k],
+                             self.callback,
+                             new_path)
 
 
     def __getattr__(self,k):
@@ -37,4 +42,5 @@ class Telescope(object):
         if '()' not in self.d.keys():
             raise TypeError('object is not callable')
 
-        return self.callback(self.path,*args,**kwargs)
+        new_path = self.path+['()']
+        return self.callback(new_path,*args,**kwargs)

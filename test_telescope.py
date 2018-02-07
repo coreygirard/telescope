@@ -9,8 +9,11 @@ tree = {'()': None,
         '.':  {'bbb1':None,
                'bbb2':{'()':None}}}
 
-tree = {'()':False,
-        '[]':{42:True}}
+tree = {'()':None,
+        '[]':{42:{'()':None},
+              9:{'()':None}},
+        '.':{'abc':{'()':None},
+             'def':{'()':None}}}
 
 #pprint(tree,width=20)
 
@@ -24,12 +27,12 @@ class Flytrap(object):
 class Test(unittest.TestCase):
     def test_(self):
         flytrap = Flytrap()
-        tele = telescope.Telescope(tree,flytrap.f)
+        tele = telescope.Telescope(tree,print)
 
         tele()
-        print(flytrap.val)
-        tele[42]
-        print(flytrap.val)
+        tele[42]()
+        tele[9]()
+        tele.abc
 
 
         #self.assertEqual(flytrap.val,['aaa1','bbb1'])
