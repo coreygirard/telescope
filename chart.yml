@@ -1,0 +1,23 @@
+spine
+    .visible()
+    .bounds()
+    .ticks
+        .major()
+        .minor()
+
+chart
+    .spine
+        .left
+            {spine}
+        .right
+            {spine}
+        .top
+            {spine}
+        .bottom
+            {spine}
+    .plot()
+    .scatter()
+    .xlim()
+    .ylim()
+    .line
+        .label()
