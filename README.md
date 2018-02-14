@@ -2,8 +2,8 @@
 
 ## What
 
-**Telescope** is a library for creating virtual object hierarchies for purposes of simplifying user interaction. What does this actually mean? I wrote it to aid in crafting elegant interfaces to codebases that are three things:
-- Inner mechanics don't follow a clean cognitive model (example: Matplotlib)
+**Telescope** is a library for creating virtual object hierarchies to simplify user interaction. What does this actually mean? I wrote it to aid in crafting elegant interfaces to codebases that are three things:
+- Inner mechanics aren't well-matched to our cognitive model of the concepts involved (examples: Matplotlib, LIFX API)
 - Impossible to refactor (perhaps because it's third-party, perhaps because structure is dictated by computational efficiency requirements)
 - Unreasonable to hand-craft a solution, often because it would require passing around internal state in an unwieldy and/or computationally expensive fashion
 
