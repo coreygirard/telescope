@@ -46,10 +46,8 @@ class Example(Telescope('example.yml','example')):
 
     def handle(self, route, *args, **kwargs):
         return route
-```
-```python
-example = Example()
 
+example = Example()
 print(example.hello.world())
 ```
 ```
