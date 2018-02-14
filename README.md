@@ -45,19 +45,17 @@ class Example(Telescope('example.yml','example')):
         # init stuff
 
     def handle(self, route, *args, **kwargs):
-        print(fuse(route), args, kwargs)
+        return route
 ```
 ```python
 example = Example()
 
-example.hello.world()
+print(example.hello.world())
+```
+```
+.hello.world()
+```
 
-example.hello.world('arg1','arg2',kw1=1,kw2=2)
-```
-```
-'.hello.world()' (,) {}
-'.hello.world()' ('arg1', 'arg2') {'kw1': 1, 'kw2': 2}
-```
 
 ## YML format
 
