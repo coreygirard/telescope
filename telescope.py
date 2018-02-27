@@ -32,6 +32,9 @@ def convert_tree(tree):
             if k.endswith('()'):
                 k = k[:-2]
                 d['.'][k] = {'()':None}
+            elif k.endswith('[]'):
+                k = k[:-2]
+                d['.'][k] = {'[]':None}
             else:
                 d['.'][k] = convert_tree(v)
 
@@ -80,6 +83,13 @@ class Telescope(object):
         self.path = path
 
     def __getitem__(self,k):
+        if '[]' not in self.d.keys():
+            raise TypeError('object is not callable')
+
+        new_path = self.path+[('[]',)]
+        return self.callback(new_path,k,{})
+
+        '''
         if type(self.d) != dict:
             raise Exception('something')
         if '[]' not in self.d.keys():
@@ -94,6 +104,7 @@ class Telescope(object):
             return Telescope(self.d['[]'][k],
                              self.callback,
                              new_path)
+        '''
 
     def __getattr__(self,k):
         if type(self.d) != dict:
@@ -101,7 +112,8 @@ class Telescope(object):
         if '.' not in self.d.keys():
             raise Exception('something')
         if k not in self.d['.'].keys():
-            raise AttributeError('.'+str(k))
+            raise AttributeError(str(self.d['.'].keys()))
+            #raise AttributeError('.'+str(k))
 
         new_path = self.path+[('.',k)]
         if self.d['.'][k] == None:
