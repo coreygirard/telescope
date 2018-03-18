@@ -1,8 +1,6 @@
-import sys
-sys.path.append("/Users/coreygirard/Documents/GitHub/foldr")
 import foldr
-
 from collections import namedtuple
+
 
 Node = namedtuple('Node', 'type val args kwargs')
 
