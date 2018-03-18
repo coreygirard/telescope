@@ -3,16 +3,14 @@ import doctest
 import telescope
 
 
+Node = telescope.Node
+
 class Flytrap(object):
     def __init__(self):
         self.route = None
-        self.args = None
-        self.kwargs = None
 
-    def f(self, route, *args, **kwargs):
+    def f(self, route):
         self.route = route
-        self.args = args
-        self.kwargs = kwargs
 
 
 class TestCallableRoot(unittest.TestCase):
@@ -21,15 +19,30 @@ class TestCallableRoot(unittest.TestCase):
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele()
+        tele()
 
-        self.assertEqual([flytrap.route,
-                          flytrap.args,
-                          flytrap.kwargs],
-                         [[('()',)],
-                          tuple(),
-                          {}])
+        expected = [Node(type='()',
+                         val=None,
+                         args=(),
+                         kwargs={})]
 
+        self.assertEqual(flytrap.route,
+                         expected)
+
+    def test_callable_root_with_args(self):
+        tree = {'()': None}
+
+        flytrap = Flytrap()
+        tele = telescope.Telescope(tree, flytrap.f)
+        tele(123, '456')
+
+        expected = [Node(type='()',
+                         val=None,
+                         args=(123, '456'),
+                         kwargs={})]
+
+        self.assertEqual(flytrap.route,
+                         expected)
 
 class TestAttribute(unittest.TestCase):
     def test_attribute(self):
@@ -37,18 +50,16 @@ class TestAttribute(unittest.TestCase):
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele.aaa
+        tele.aaa
 
-        self.assertEqual([flytrap.route,
-                          flytrap.args,
-                          flytrap.kwargs],
-                         [[('.', 'aaa')],
-                          (),
-                          {}])
+        self.assertEqual(flytrap.route,
+                         [Node(type='attr',
+                               val='aaa',
+                               args=None,
+                               kwargs=None)])
 
         temp = lambda a: a.bbb
         self.assertRaises(AttributeError, temp, tele)
-
 
 class TestElement(unittest.TestCase):
     def test_element(self):
@@ -56,14 +67,13 @@ class TestElement(unittest.TestCase):
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele['abc']
+        tele['abc']
 
-        self.assertEqual([flytrap.route,
-                          flytrap.args,
-                          flytrap.kwargs],
-                         [[('[]',)],
-                          ('abc',),
-                          {}])
+        self.assertEqual(flytrap.route,
+                         [Node(type='[]',
+                               val=None,
+                               args='abc',
+                               kwargs=None)])
 
 class TestFileLoad(unittest.TestCase):
     def test_file_load(self):
@@ -81,14 +91,21 @@ class TestChained(unittest.TestCase):
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele.aaa.bbb.ccc
+        tele.aaa.bbb.ccc
 
         self.assertEqual(flytrap.route,
-                         [('.', 'aaa'), ('.', 'bbb'), ('.', 'ccc')])
-        self.assertEqual([flytrap.args,
-                          flytrap.kwargs],
-                         [(),
-                          {}])
+                         [Node(type='attr',
+                               val='aaa',
+                               args=None,
+                               kwargs=None),
+                          Node(type='attr',
+                               val='bbb',
+                               args=None,
+                               kwargs=None),
+                          Node(type='attr',
+                               val='ccc',
+                               args=None,
+                               kwargs=None)])
 
         temp = lambda a: a.aaa.bbb.ddd
         self.assertRaises(AttributeError, temp, tele)
@@ -98,37 +115,53 @@ class TestChained(unittest.TestCase):
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele.aaa.bbb.ccc()
+        tele.aaa.bbb.ccc()
 
         self.assertEqual(flytrap.route,
-                         [('.', 'aaa'), ('.', 'bbb'), ('.', 'ccc'), ('()',)])
-        self.assertEqual([flytrap.args,
-                          flytrap.kwargs],
-                         [(),
-                          {}])
+                         [Node(type='attr',
+                               val='aaa',
+                               args=None,
+                               kwargs=None),
+                          Node(type='attr',
+                               val='bbb',
+                               args=None,
+                               kwargs=None),
+                          Node(type='()',
+                               val='ccc',
+                               args=(),
+                               kwargs={})])
 
-        _ = tele.aaa.bbb.ccc('hello')
+        flytrap = Flytrap()
+        tele = telescope.Telescope(tree, flytrap.f)
+        tele.aaa.bbb.ccc('hello')
 
         self.assertEqual(flytrap.route,
-                         [('.', 'aaa'), ('.', 'bbb'), ('.', 'ccc'), ('()',)])
-        self.assertEqual([flytrap.args,
-                          flytrap.kwargs],
-                         [('hello',),
-                          {}])
+                         [Node(type='attr',
+                               val='aaa',
+                               args=None,
+                               kwargs=None),
+                          Node(type='attr',
+                               val='bbb',
+                               args=None,
+                               kwargs=None),
+                          Node(type='()',
+                               val='ccc',
+                               args=('hello',),
+                               kwargs={})])
 
     def test_getitem(self):
         tree = {'.': {'aaa': {'.': {'bbb': {'.': {'ccc': {'[]': None}}}}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele.aaa.bbb.ccc['hello']
+        tele.aaa.bbb.ccc['hello']
 
         self.assertEqual(flytrap.route,
-                         [Node(type='.',
+                         [Node(type='attr',
                                val='aaa',
                                args=None,
                                kwargs=None),
-                          Node(type='.',
+                          Node(type='attr',
                                val='bbb',
                                args=None,
                                kwargs=None),
@@ -136,41 +169,48 @@ class TestChained(unittest.TestCase):
                                val='ccc',
                                args='hello',
                                kwargs=None)])
-        self.assertEqual([flytrap.args,
-                          flytrap.kwargs],
-                         [('hello',),
-                          {}])
 
     def test_deep_call(self):
         tree = {'.': {'aaa': {'.': {'bbb': {'()': {'.': {'ccc': None}}}}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele.aaa.bbb('hello', suffix='world').ccc
+        tele.aaa.bbb('hello', suffix='world').ccc
 
         self.assertEqual(flytrap.route,
-                         [('.', 'aaa'),
-                          ('.', 'bbb'),
-                          ('()', ('hello',), {'suffix': 'world'}),
-                          ('.', 'ccc')])
-        self.assertEqual([flytrap.args,
-                          flytrap.kwargs],
-                         [(),
-                          {}])
+                         [Node(type='attr',
+                               val='aaa',
+                               args=None,
+                               kwargs=None),
+                          Node(type='()',
+                               val='bbb',
+                               args=('hello',),
+                               kwargs={'suffix': 'world'}),
+                          Node(type='attr',
+                               val='ccc',
+                               args=None,
+                               kwargs=None)])
 
     def test_deep_getitem(self):
         tree = {'.': {'aaa': {'.': {'bbb': {'[]': {'.': {'ccc': None}}}}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
-        _ = tele.aaa.bbb[765].ccc
+        tele.aaa.bbb[765].ccc
 
         self.assertEqual(flytrap.route,
-                         [('.', 'aaa'), ('.', 'bbb'), ('[]', 765), ('.', 'ccc')])
-        self.assertEqual([flytrap.args,
-                          flytrap.kwargs],
-                         [(),
-                          {}])
+                         [Node(type='attr',
+                               val='aaa',
+                               args=None,
+                               kwargs=None),
+                          Node(type='[]',
+                               val='bbb',
+                               args=765,
+                               kwargs=None),
+                          Node(type='attr',
+                               val='ccc',
+                               args=None,
+                               kwargs=None)])
 
 
 def load_tests(loader, tests, ignore):
@@ -179,6 +219,42 @@ def load_tests(loader, tests, ignore):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -6,21 +6,6 @@ from collections import namedtuple
 
 Node = namedtuple('Node', 'type val args kwargs')
 
-'''
-spine_properties = {'visible':{'()':None},
-                    'bounds':{'()':None},
-                    'ticks':{'.':{'major':{'()':None},
-                                  'minor':{'()':None}}}}
-tree = {'.':{'plot':{'()':None},
-             'scatter':{'()':None},
-             'xlim':{'()':None},
-             'ylim':{'()':None},
-             'line':{'.':{'label':{'()':None}}},
-             'spine':{'.':{'left':{'.':spine_properties},
-                           'right':{'.':spine_properties},
-                           'top':{'.':spine_properties},
-                           'bottom':{'.':spine_properties}}}}}
-'''
 
 def convert_tree(tree):
     if isinstance(tree, str):
@@ -109,7 +94,7 @@ def build_tree(filename):
 class Telescope(object):
     def __init__(self, d, callback, path=[], k=None):
         if isinstance(d, str):
-            self.d = build_tree(d)[k]
+            self.d = build_tree(d)
         else:
             self.d = d
 
@@ -139,11 +124,18 @@ class Telescope(object):
         if '[]' not in self.d.keys():
             raise TypeError('object is not callable')
 
+        try:
+            temp_val = self.path.pop().val
+        except:
+            temp_val = None
+        new_path = self.path+[Node(type='[]',
+                                   val=temp_val,
+                                   args=k,
+                                   kwargs=None)]
+
         if self.d['[]'] == None:
-            new_path = self.path+[('[]',)]
-            return self.callback(new_path, k)
+            return self.callback(new_path)
         # else:
-        new_path = self.path+[('[]', k)]
         return Telescope(self.d['[]'],
                          self.callback,
                          new_path)
@@ -152,11 +144,19 @@ class Telescope(object):
         if '()' not in self.d.keys():
             raise TypeError('object is not callable')
 
+        try:
+            temp_val = self.path.pop().val
+        except:
+            temp_val = None
+
+        new_path = self.path+[Node(type='()',
+                                   val=temp_val,
+                                   args=args,
+                                   kwargs=kwargs)]
+
         if self.d['()'] == None:
-            new_path = self.path+[('()',)]
-            return self.callback(new_path, *args, **kwargs)
+            return self.callback(new_path)
         # else:
-        new_path = self.path+[('()', args, kwargs)]
         return Telescope(self.d['()'],
                          self.callback,
                          new_path)
