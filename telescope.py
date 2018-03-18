@@ -92,7 +92,7 @@ def build_tree(filename):
     return d[head]
 
 class Telescope(object):
-    def __init__(self, d, callback, path=[], k=None):
+    def __init__(self, d, callback, path=[]):
         if isinstance(d, str):
             self.d = build_tree(d)
         else:
