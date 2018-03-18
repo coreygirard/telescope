@@ -1,5 +1,8 @@
 # telescope
 
+**(highly experimental)** <br>
+Do not use yet. Also, the internals don't quite match the documentation at the moment (particularly with respect to initialization)
+
 ## What
 
 **Telescope** is a library for creating virtual object hierarchies to simplify user interaction. What does this actually mean? I wrote it to aid in crafting elegant interfaces to codebases that are three things:
@@ -31,24 +34,24 @@ Assuming this was a valid path specified in the YML file, `example.handle()` wou
 
 `example.yml`
 ```yml
-example
+thing
     .hello
         .world()
 ```
 
 `example.py`
 ```python
-from telescope import Telescope, fuse
+from telescope import Telescope
 
-class Example(Telescope('example.yml','example')):
+class Example(Telescope('example.yml','thing')):
     def __init__(self):
         # init stuff
 
     def handle(self, route, *args, **kwargs):
-        return route
+        print(route)
 
 example = Example()
-print(example.hello.world())
+example.hello.world()
 ```
 ```
 .hello.world()
@@ -114,9 +117,9 @@ example = Example()
 
 executed | route | args | kwargs
 --- | --- | --- | ---
-`example.bbb.ccc()` | '.bbb.ccc()' | () | {}
-`example.bbb.ccc('arg1')` | '.bbb.ccc()' | ('arg1',) | {}
-`example.bbb.ccc('arg1','arg2',kw1=1,kw2=2)` | '.bbb.ccc()' | ('arg1','arg2') | {'kw1':1, 'kw2':2}
+`example.bbb.ccc()` | `'.bbb.ccc()'` | `()` | `{}`
+`example.bbb.ccc('arg1')` | `'.bbb.ccc()'` | `('arg1',&nbsp;)` | `{}`
+`example.bbb.ccc('arg1', 'arg2', kw1=1, kw2=2)` | `'.bbb.ccc()'` | `('arg1',&nbsp;'arg2')` | `{'kw1':1,&nbsp;'kw2':2}`
 
 
 
@@ -124,12 +127,12 @@ executed | route | args | kwargs
 
 executed | route | args | kwargs
 --- | --- | --- | ---
-`example.bbb.eee[5]` | '.bbb.eee[]' | (5,) | {}
-`example.bbb.eee[5:10]` | '.bbb.eee[]' | (slice(5, 10, None),) | {}
-`example.bbb.eee[5:10:2]` | '.bbb.eee[]' | (slice(5, 10, 2),) | {}
-`example.bbb.eee[1,4,5]` | '.bbb.eee[]' | ((1, 4, 5),) | {}
-`example.bbb.eee[1:4,5]` | '.bbb.eee[]' | ((slice(1, 4, None), 5),) | {}
-`example.bbb.eee[lambda t: t**2]` | '.bbb.eee[]' | (`<function <lambda> at 0x100000000>`,) | {}
+`example.bbb.eee[5]` | `'.bbb.eee[]'` | `(5,)` | `{}`
+`example.bbb.eee[5:10]` | `'.bbb.eee[]'` | `(slice(5, 10, None),)` | `{}`
+`example.bbb.eee[5:10:2]` | `'.bbb.eee[]'` | `(slice(5, 10, 2),)` | `{}`
+`example.bbb.eee[1, 4, 5]` | `'.bbb.eee[]'` | `((1, 4, 5),)` | `{}`
+`example.bbb.eee[1:4, 5]` | `'.bbb.eee[]'` | `((slice(1, 4, None), 5),)` | `{}`
+`example.bbb.eee[lambda t: t**2]` | `'.bbb.eee[]'` | `(<function <lambda> at 0x100000000>,)` | `{}`
 
 
 
@@ -138,7 +141,7 @@ executed | route | args | kwargs
 
 executed | route | args | kwargs
 --- | --- | --- | ---
-`example.bbb.ddd` | '.bbb.ddd' | () | {}
+`example.bbb.ddd` | `'.bbb.ddd'` | `()` | `{}`
 
 
 
@@ -156,3 +159,4 @@ executed | route | args | kwargs
 ## Todo
 
 - [ ] Enable `*` in the DSL to allow arbitrary wildcards
+- [ ] Support choosing to build the entire object tree once on init, if you value time over space

@@ -1,8 +1,12 @@
-from pprint import pprint
 import sys
 sys.path.append("/Users/coreygirard/Documents/GitHub/foldr")
 import foldr
 
+from collections import namedtuple
+
+Node = namedtuple('Node', 'type val args kwargs')
+
+'''
 spine_properties = {'visible':{'()':None},
                     'bounds':{'()':None},
                     'ticks':{'.':{'major':{'()':None},
@@ -16,25 +20,27 @@ tree = {'.':{'plot':{'()':None},
                            'right':{'.':spine_properties},
                            'top':{'.':spine_properties},
                            'bottom':{'.':spine_properties}}}}}
+'''
 
 def convert_tree(tree):
-    if type(tree) == str:
-        if tree.endswith('()'):
-            return {'()':None}
+    if isinstance(tree, str):
+        return {tree: None}
 
     d = {}
-    for k,v in tree:
+    for k, v in tree:
         if k.startswith('.'):
             if '.' not in d:
                 d['.'] = {}
 
-            k = k[1:]
+            k = k.lstrip('.')
             if k.endswith('()'):
                 k = k[:-2]
                 d['.'][k] = {'()':None}
             elif k.endswith('[]'):
                 k = k[:-2]
                 d['.'][k] = {'[]':None}
+            elif v == []:
+                d['.'][k] = None
             else:
                 d['.'][k] = convert_tree(v)
 
@@ -43,13 +49,16 @@ def convert_tree(tree):
 
     return d
 
-def merge_tree(tree,ref):
+
+def merge_tree(tree, ref):
+    # fills in {links}
+
     d = {}
-    for k,v in tree.items():
-        if v == None:
+    for k, v in tree.items():
+        if v is None:
             d[k] = v
-        elif type(v) == dict:
-            d[k] = merge_tree(v,ref)
+        elif isinstance(v, dict):
+            d[k] = merge_tree(v, ref)
         elif v[0]+v[-1] == '{}':
             d[k] = ref[v[1:-1]]
         else:
@@ -59,73 +68,95 @@ def merge_tree(tree,ref):
 
 
 def build_tree(filename):
-    with open(filename,'r') as f:
-        data = [line.rstrip() for line in f if line.rstrip() != '']
+    """Builds Telescope tree structure from YML file
 
-    data = [(len(line)-len(line.lstrip()),line.lstrip()) for line in data]
+    Reads YML file and parses it into a virtual object hierarchy
+
+    Args:
+        filename: A relative filepath to a valid YML file
+            specifying a Telescope tree structure
+
+    Returns:
+        A dict corresponding to the abstract structure of the desired
+        Telescope behavior. Values of this dict may be nested dicts.
+        For example:
+
+        {'()': None,
+         '[]': {42: {'()':None}},
+         '.':  {'bbb1':None,
+                'bbb2':{'()':None}}}
+    """
+
+    # read file line-by-line, stripping whitespace from right
+    # and ignoring blank lines
+    with open(filename, 'r') as file:
+        data = [line.rstrip() for line in file if line.rstrip() != '']
+
+    # build a list of (line_indent, stripped_line) tuples for each line
+    data = [(len(line)-len(line.lstrip()), line.lstrip()) for line in data]
+
+    head = data[0][1]
 
     d = {}
-    for k,v in foldr.fromList(data,simple=True):
+    for k, v in foldr.from_list(data, simple=True):
         d[k] = v
 
-    for k,v in d.items():
+    for k, v in d.items():
         d[k] = convert_tree(v)
-    d = merge_tree(d,d)
-    return d
+    d = merge_tree(d, d)
+    return d[head]
 
 class Telescope(object):
-    def __init__(self,d,callback,path=[],k=None):
-        if type(d) == str:
+    def __init__(self, d, callback, path=[], k=None):
+        if isinstance(d, str):
             self.d = build_tree(d)[k]
         else:
             self.d = d
+
         self.callback = callback
         self.path = path
 
-    def __getitem__(self,k):
+    def __getattr__(self, k):
+        if not isinstance(self.d, dict):
+            raise Exception('something')
+        if '.' not in self.d.keys():
+            raise Exception('something2')
+        if k not in self.d['.'].keys():
+            raise AttributeError(k)
+
+        new_path = self.path+[Node(type='attr',
+                                   val=k,
+                                   args=None,
+                                   kwargs=None)]
+        if self.d['.'][k] is None:
+            return self.callback(new_path)
+        # else:
+        return Telescope(self.d['.'][k],
+                         self.callback,
+                         new_path)
+
+    def __getitem__(self, k):
         if '[]' not in self.d.keys():
             raise TypeError('object is not callable')
 
-        new_path = self.path+[('[]',)]
-        return self.callback(new_path,k,{})
+        if self.d['[]'] == None:
+            new_path = self.path+[('[]',)]
+            return self.callback(new_path, k)
+        # else:
+        new_path = self.path+[('[]', k)]
+        return Telescope(self.d['[]'],
+                         self.callback,
+                         new_path)
 
-        '''
-        if type(self.d) != dict:
-            raise Exception('something')
-        if '[]' not in self.d.keys():
-            raise Exception('something')
-        if k not in self.d['[]'].keys():
-            raise AttributeError('[]'+str(k))
-
-        new_path = self.path+[('[]',k)]
-        if self.d['[]'][k] == None:
-            return self.callback(new_path)
-        else:
-            return Telescope(self.d['[]'][k],
-                             self.callback,
-                             new_path)
-        '''
-
-    def __getattr__(self,k):
-        if type(self.d) != dict:
-            raise Exception('something')
-        if '.' not in self.d.keys():
-            raise Exception('something')
-        if k not in self.d['.'].keys():
-            raise AttributeError(str(self.d['.'].keys()))
-            #raise AttributeError('.'+str(k))
-
-        new_path = self.path+[('.',k)]
-        if self.d['.'][k] == None:
-            return self.callback(new_path)
-        else:
-            return Telescope(self.d['.'][k],
-                             self.callback,
-                             new_path)
-
-    def __call__(self,*args,**kwargs):
+    def __call__(self, *args, **kwargs):
         if '()' not in self.d.keys():
             raise TypeError('object is not callable')
 
-        new_path = self.path+[('()',)]
-        return self.callback(new_path,*args,**kwargs)
+        if self.d['()'] == None:
+            new_path = self.path+[('()',)]
+            return self.callback(new_path, *args, **kwargs)
+        # else:
+        new_path = self.path+[('()', args, kwargs)]
+        return Telescope(self.d['()'],
+                         self.callback,
+                         new_path)
