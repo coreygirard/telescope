@@ -1,6 +1,7 @@
 import foldr
 from collections import namedtuple
 
+from pprint import pprint
 
 Node = namedtuple('Node', 'type val args kwargs')
 
@@ -12,20 +13,17 @@ def convert_tree(tree):
     d = {}
     for k, v in tree:
         if k.startswith('.'):
-            if '.' not in d:
-                d['.'] = {}
-
             k = k.lstrip('.')
             if k.endswith('()'):
                 k = k[:-2]
-                d['.'][k] = {'()':None}
+                d[k] = {'()': None}
             elif k.endswith('[]'):
                 k = k[:-2]
-                d['.'][k] = {'[]':None}
+                d[k] = {'[]': None}
             elif v == []:
-                d['.'][k] = None
+                d[k] = None
             else:
-                d['.'][k] = convert_tree(v)
+                d[k] = convert_tree(v)
 
         elif k[0]+k[-1] == '{}':
             return k
@@ -43,6 +41,7 @@ def merge_tree(tree, ref):
         elif isinstance(v, dict):
             d[k] = merge_tree(v, ref)
         elif v[0]+v[-1] == '{}':
+            pass
             d[k] = ref[v[1:-1]]
         else:
             d[k] = v
@@ -90,71 +89,84 @@ def build_tree(filename):
     return d[head]
 
 class Telescope(object):
-    def __init__(self, d, callback, path=[]):
+    def __init__(self, d, callback, path=None):
         if isinstance(d, str):
             self.d = build_tree(d)
         else:
             self.d = d
 
         self.callback = callback
-        self.path = path
+        if path is None:
+            self.path = []
+        else:
+            self.path = path
 
     def __getattr__(self, k):
-        if not isinstance(self.d, dict):
-            raise Exception('something')
-        if '.' not in self.d.keys():
-            raise Exception('something2')
-        if k not in self.d['.'].keys():
+        #print(k, self.d.keys())
+
+        if k not in self.d.keys():
             raise AttributeError(k)
 
         new_path = self.path+[Node(type='attr',
                                    val=k,
                                    args=None,
                                    kwargs=None)]
-        if self.d['.'][k] is None:
+        if self.d[k] is None:
             return self.callback(new_path)
         # else:
-        return Telescope(self.d['.'][k],
+        return Telescope(self.d[k],
+                         self.callback,
+                         new_path)
+
+    def _nonattr(self, kind, args, kwargs):
+        try:
+            temp_val = self.path.pop().val
+        except:
+            temp_val = None
+
+        new_path = self.path+[Node(type=kind,
+                                   val=temp_val,
+                                   args=args,
+                                   kwargs=kwargs)]
+
+        if self.d[kind] == None:
+            return self.callback(new_path)
+        # else:
+        return Telescope(self.d[kind],
                          self.callback,
                          new_path)
 
     def __getitem__(self, k):
         if '[]' not in self.d.keys():
-            raise TypeError('object is not callable')
+            raise TypeError('object does not support indexing')
 
-        try:
-            temp_val = self.path.pop().val
-        except:
-            temp_val = None
-        new_path = self.path+[Node(type='[]',
-                                   val=temp_val,
-                                   args=k,
-                                   kwargs=None)]
-
-        if self.d['[]'] == None:
-            return self.callback(new_path)
-        # else:
-        return Telescope(self.d['[]'],
-                         self.callback,
-                         new_path)
+        return self._nonattr('[]', k, None)
 
     def __call__(self, *args, **kwargs):
         if '()' not in self.d.keys():
             raise TypeError('object is not callable')
 
-        try:
-            temp_val = self.path.pop().val
-        except:
-            temp_val = None
+        return self._nonattr('()', args, kwargs)
 
-        new_path = self.path+[Node(type='()',
-                                   val=temp_val,
-                                   args=args,
-                                   kwargs=kwargs)]
+    def __dir__(self):
+        # TODO: return actual useful functionality
+        return sorted(list(self.d.keys()))
 
-        if self.d['()'] == None:
-            return self.callback(new_path)
-        # else:
-        return Telescope(self.d['()'],
-                         self.callback,
-                         new_path)
+
+#def telehelper(tree):
+#    def f():
+#        return Telescope(tree, print)
+#    return f
+
+class Tele(object):
+    def __init__(self, *args, **kwargs):
+        self._telescope = Telescope(self.tree, print)
+
+    def __getattr__(self, k):
+        return getattr(self._telescope, k)
+
+
+def telehelper(tree):
+    temp = Tele
+    temp.tree = tree
+    return temp

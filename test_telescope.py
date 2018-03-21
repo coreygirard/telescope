@@ -13,6 +13,21 @@ class Flytrap(object):
         self.route = route
 
 
+class TestInit(unittest.TestCase):
+    def test_init(self):
+        tree = {'aaa': None}
+
+        class Testing(telescope.telehelper(tree)):
+            def handle(self, *args, **kwargs):
+                print('hello', args, kwargs)
+
+        t = Testing()
+        t.aaa
+
+        temp = lambda a: a.bbb
+        self.assertRaises(AttributeError, temp, t)
+
+
 class TestCallableRoot(unittest.TestCase):
     def test_callable_root(self):
         tree = {'()': None}
@@ -46,7 +61,7 @@ class TestCallableRoot(unittest.TestCase):
 
 class TestAttribute(unittest.TestCase):
     def test_attribute(self):
-        tree = {'.': {'aaa': None}}
+        tree = {'aaa': None}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
@@ -78,16 +93,15 @@ class TestElement(unittest.TestCase):
 class TestFileLoad(unittest.TestCase):
     def test_file_load(self):
         result = telescope.build_tree('chart.yml')
-        expected = {'.': {'bbb': None,
-                          'ccc': {'[]': None},
-                          'ddd': {'()': None},
-                          'eee': {'.': {'jjj': None}}}}
+        expected = {'bbb': None,
+                    'ccc': {'[]': None},
+                    'ddd': {'()': None},
+                    'eee': {'jjj': None}}
         self.assertEqual(result, expected)
-
 
 class TestChained(unittest.TestCase):
     def test_attribute(self):
-        tree = {'.': {'aaa': {'.': {'bbb': {'.': {'ccc': None}}}}}}
+        tree = {'aaa': {'bbb': {'ccc': None}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
@@ -111,7 +125,7 @@ class TestChained(unittest.TestCase):
         self.assertRaises(AttributeError, temp, tele)
 
     def test_call(self):
-        tree = {'.': {'aaa': {'.': {'bbb': {'.': {'ccc': {'()': None}}}}}}}
+        tree = {'aaa': {'bbb': {'ccc': {'()': None}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
@@ -150,7 +164,7 @@ class TestChained(unittest.TestCase):
                                kwargs={})])
 
     def test_getitem(self):
-        tree = {'.': {'aaa': {'.': {'bbb': {'.': {'ccc': {'[]': None}}}}}}}
+        tree = {'aaa': {'bbb': {'ccc': {'[]': None}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
@@ -171,7 +185,7 @@ class TestChained(unittest.TestCase):
                                kwargs=None)])
 
     def test_deep_call(self):
-        tree = {'.': {'aaa': {'.': {'bbb': {'()': {'.': {'ccc': None}}}}}}}
+        tree = {'aaa': {'bbb': {'()': {'ccc': None}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
@@ -192,7 +206,7 @@ class TestChained(unittest.TestCase):
                                kwargs=None)])
 
     def test_deep_getitem(self):
-        tree = {'.': {'aaa': {'.': {'bbb': {'[]': {'.': {'ccc': None}}}}}}}
+        tree = {'aaa': {'bbb': {'[]': {'ccc': None}}}}
 
         flytrap = Flytrap()
         tele = telescope.Telescope(tree, flytrap.f)
@@ -219,128 +233,3 @@ def load_tests(loader, tests, ignore):
 
 if __name__ == '__main__':
     unittest.main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-tree = {'()': None,
-        '[]': {42: {'()':None}},
-        '.':  {'bbb1':None,
-               'bbb2':{'()':None}}}
-
-tree = {'()':None,
-        '[]':{42:{'()':None},
-              9:{'()':None}},
-        '.':{'abc':{'()':None},
-             'ijk':None}}
-
-
-
-#pprint(tree,width=20)
-
-class Flytrap(object):
-    def __init__(self):
-        self.args = None
-        self.kwargs = None
-
-    def f(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-class TestBasic(unittest.TestCase):
-    def test_basic(self):
-        flytrap = Flytrap()
-        tele = telescope.Telescope(tree, flytrap.f)
-
-        tele()
-        self.assertEqual(flytrap.args, ([('()',)],))
-
-        tele[42]()
-        self.assertEqual(flytrap.args, [('[]', 42), ('()',)])
-
-        tele[9]()
-        self.assertEqual(flytrap.args, [('[]', 9), ('()',)])
-
-        tele.abc()
-        self.assertEqual(flytrap.args, [('.', 'abc'), ('()',)])
-
-        tele.ijk
-        self.assertEqual(flytrap.args, [('.', 'ijk')])
-
-
-        #self.assertEqual(flytrap.val,['aaa1','bbb1'])
-
-'''
-spine_properties = {'visible': {'()': None},
-                    'bounds': {'()': None},
-                    'ticks': {'.': {'major': {'()': None},
-                                    'minor': {'()': None}}}}
-tree = {'.':{'plot':'()',
-             'scatter':'()',
-             'xlim':'()',
-             'ylim':'()',
-             'line':{'label':'()'},
-             'spine':{'.':{'left':{'.':spine_properties},
-                           'right':{'.':spine_properties},
-                           'top':{'.':spine_properties},
-                           'bottom':{'.':spine_properties}}}}}
-'''
-
-class TestFileLoad(unittest.TestCase):
-    def test_file_load(self):
-        flytrap = Flytrap()
-
-        path = '/Users/coreygirard/Documents/GitHub/telescope/chart.yml'
-        tele = telescope.Telescope(path, print, k='chart')
-        tele.spine.left.visible('aaa', 'bbb')
-        tele.plot()
-        tele.line.label()
-        tele.spine.left.visible()
-        #self.assertEqual(flytrap.val,[('()',)])
-
-
-def load_tests(loader, tests, ignore):
-    tests.addTests(doctest.DocTestSuite(telescope))
-    return tests
-
-if __name__ == '__main__':
-    unittest.main()
-"""
