@@ -89,21 +89,24 @@ def build_tree(filename):
     return d[head]
 
 class Telescope(object):
-    def __init__(self, d, callback, path=None):
+    def __init__(self, d, path=None):
         if isinstance(d, str):
             self.d = build_tree(d)
         else:
             self.d = d
 
-        self.callback = callback
         if path is None:
             self.path = []
         else:
             self.path = path
 
     def __getattr__(self, k):
+        if k == 'handle':
+            return self.__getattribute__(k)
+
         #print(k, self.d.keys())
 
+        print(k, self.d.keys())
         if k not in self.d.keys():
             raise AttributeError(k)
 
@@ -112,7 +115,7 @@ class Telescope(object):
                                    args=None,
                                    kwargs=None)]
         if self.d[k] is None:
-            return self.callback(new_path)
+            return self.handle(new_path)
         # else:
         return Telescope(self.d[k],
                          self.callback,
@@ -130,7 +133,7 @@ class Telescope(object):
                                    kwargs=kwargs)]
 
         if self.d[kind] == None:
-            return self.callback(new_path)
+            return self.handle(new_path)
         # else:
         return Telescope(self.d[kind],
                          self.callback,
@@ -160,7 +163,7 @@ class Telescope(object):
 
 class Tele(object):
     def __init__(self, *args, **kwargs):
-        self._telescope = Telescope(self.tree, print)
+        self._telescope = Telescope(self.tree)
 
     def __getattr__(self, k):
         return getattr(self._telescope, k)
