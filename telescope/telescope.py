@@ -1,10 +1,8 @@
-import foldr
 from collections import namedtuple
+import foldr2 as foldr
 
-from pprint import pprint
 
 Node = namedtuple('Node', 'type val args kwargs')
-
 
 def convert_tree(tree):
     if isinstance(tree, str):
@@ -41,7 +39,6 @@ def merge_tree(tree, ref):
         elif isinstance(v, dict):
             d[k] = merge_tree(v, ref)
         elif v[0]+v[-1] == '{}':
-            pass
             d[k] = ref[v[1:-1]]
         else:
             d[k] = v
@@ -132,7 +129,7 @@ class Telescope(object):
                                    args=args,
                                    kwargs=kwargs)]
 
-        if self.d[kind] == None:
+        if self.d[kind] is None:
             return self.handle(new_path)
         # else:
         return Telescope(self.d[kind],
@@ -156,11 +153,6 @@ class Telescope(object):
         return sorted(list(self.d.keys()))
 
 
-#def telehelper(tree):
-#    def f():
-#        return Telescope(tree, print)
-#    return f
-
 class Tele(object):
     def __init__(self, *args, **kwargs):
         self._telescope = Telescope(self.tree)
@@ -169,7 +161,7 @@ class Tele(object):
         return getattr(self._telescope, k)
 
 
-def telehelper(tree):
+def telescope(tree):
     temp = Tele
     temp.tree = tree
     return temp

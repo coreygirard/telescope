@@ -2,9 +2,6 @@ import unittest
 import doctest
 import telescope
 
-
-Node = telescope.Node
-
 class Flytrap(object):
     def __init__(self):
         self.route = None
@@ -17,7 +14,9 @@ class TestInit(unittest.TestCase):
     def test_init(self):
         tree = {'aaa': None}
 
-        class Testing(telescope.telehelper(tree)):
+        tele = telescope(tree)
+        print(tele)
+        class Testing(tele):
             def handle(self, *args, **kwargs):
                 print('hello', args, kwargs)
 
@@ -228,7 +227,7 @@ class TestChained(unittest.TestCase):
 
 '''
 def load_tests(loader, tests, ignore):
-    tests.addTests(doctest.DocTestSuite(telescope))
+    #tests.addTests(doctest.DocTestSuite(telescope))
     return tests
 
 if __name__ == '__main__':
