@@ -1,5 +1,8 @@
 # telescope
 
+[![Build Status](https://travis-ci.org/coreygirard/telescope.svg?branch=master)](https://travis-ci.org/coreygirard/telescope) <br>
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+
 **(highly experimental)** <br>
 Do not use yet. Also, the internals don't quite match the documentation at the moment (particularly with respect to initialization)
 
