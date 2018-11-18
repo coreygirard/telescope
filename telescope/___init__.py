@@ -1,1 +1,1 @@
-from telescope.telescope import telescope
+from telescope.main import Telescope
