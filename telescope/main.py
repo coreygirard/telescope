@@ -15,9 +15,6 @@ class Telescope(object):
 
         return Telescope(self.chain + [e], child, _type, self.callback)
 
-    def __repr__(self):
-        return f"Telescope(chain={self.chain},\n          structure={self.structure},\n          mode={self.mode})"
-
     def __call__(self, *args, **kwargs):
         if self.mode != "()":
             raise AttributeError()

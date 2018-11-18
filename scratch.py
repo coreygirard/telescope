@@ -19,8 +19,6 @@ def handle_leaf(chain):
     print(chain)
 
 
-
-
 a = tele.aaa
 a = tele.aaa.bbb
 a = tele.aaa.bbb.ddd
